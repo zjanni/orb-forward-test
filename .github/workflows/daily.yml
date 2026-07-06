@@ -1,0 +1,38 @@
+name: Taeglicher Forward-Test
+
+on:
+  schedule:
+    # 22:30 UTC = nach US-Boersenschluss (Sommer 22:00, Winter 21:00 UTC),
+    # Montag bis Freitag
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  forward-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pakete installieren
+        run: pip install -r requirements.txt
+
+      - name: Forward-Test ausfuehren
+        run: python forward.py
+
+      - name: Dashboard aktualisieren
+        run: python dashboard.py
+
+      - name: Ergebnisse committen
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Forward-Test Update $(date +%F)" || echo "nichts Neues"
+          git push
