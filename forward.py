@@ -17,6 +17,10 @@ from datetime import time as dtime
 import pandas as pd
 import strategie as st
 
+# Ein Tag darf erst NACH US-Boersenschluss verarbeitet werden - sonst
+# wird eine laufende Session faelschlich als fertig gewertet.
+JETZT_NY = pd.Timestamp.now(tz="America/New_York")
+
 START = "2026-07-03"        # erster Tag NACH dem Backtest-Zeitraum
 # Aufwaermphase: alle verfuegbaren Tage davor (max. ~60 Handelstage,
 # mehr gibt die Gratis-Datenquelle bei 5-Min-Kerzen nicht her) werden
@@ -71,6 +75,9 @@ for ticker in TICKERS:
         # nur abgeschlossene volle Handelstage werten
         # (letzte Kerze 15:55 New York; Halbtage werden ausgelassen)
         if len(tdf) < 30 or tdf.index[-1].time() < dtime(15, 50):
+            continue
+        # heutiger Tag: erst ab 16:05 New Yorker Zeit anfassen
+        if tag_s == str(JETZT_NY.date()) and JETZT_NY.time() < dtime(16, 5):
             continue
         for vname, (modus, sl_f, tp_r, deadline) in VARIANTEN.items():
             st.ENTRY_MODUS = modus
